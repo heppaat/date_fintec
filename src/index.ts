@@ -1,4 +1,5 @@
 //import * as fs from 'node:fs';
+import { error } from "console";
 import { readFile } from "fs/promises";
 import { z } from "zod";
 
@@ -26,6 +27,21 @@ type Data = {
     events: { title: string; date: string; notes: string; bunting: boolean }[];
   };
 };
+
+type DateObject = { year: number; month: number; day: number };
+
+type dataWithDates = {
+  [property: string]: {
+    division: string;
+    events: {
+      title: string;
+      date: DateObject;
+      notes: string;
+      bunting: boolean;
+    }[];
+  };
+};
+
 //zod data types
 const mainDataSchema = z.record(
   z.object({
@@ -43,10 +59,45 @@ const mainDataSchema = z.record(
 
 type mainData = z.infer<typeof mainDataSchema>;
 
-const printData = (data: mainData) => {
+//first task
+
+const transformDate = (str: string) => {
+  const date: DateObject = {
+    year: 0,
+    month: 0,
+    day: 0,
+  };
+  const result: string[] = str.split("-");
+  date.year = +result[0];
+  date.month = +result[1] - 1;
+  date.day = +result[2];
+  return date;
+};
+
+//console.log(transformDate("2017-01-02"));
+
+const addDatesToMainData = (data: mainData) => {
+  const newData: dataWithDates = {};
   for (const key in data) {
-    console.log(key);
+    /* newData[key] = {
+      division: data[key].division,
+      events: data[key].events.map((event) => ({
+        ...event,
+        date: transformDate(event.date),
+      })),
+    }; */
+    newData[key] = { division: data[key].division, events: [] };
+    for (let i = 0; i < data[key].events.length; i++) {
+      const event = data[key].events[i];
+      newData[key].events.push({
+        title: event.title,
+        date: transformDate(event.date),
+        notes: event.notes,
+        bunting: event.bunting,
+      });
+    }
   }
+  return newData;
 };
 
 const readData = async () => {
@@ -59,13 +110,25 @@ const readData = async () => {
 
     const validatedData = result.data;
 
-    printData(validatedData);
+    const task1 = addDatesToMainData(validatedData);
+    return task1;
   } catch (error) {
     console.log(error);
   }
 };
 
-readData();
+const main = async () => {
+  const result = await readData();
+
+  if (result) {
+    for (const key in result) {
+      console.log(result[key].events);
+    }
+  } else {
+    console.error;
+  }
+};
+main();
 
 // DON'T MODIFY THE CODE BELOW THIS LINE
 
