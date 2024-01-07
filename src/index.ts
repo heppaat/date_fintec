@@ -11,7 +11,7 @@ let DAYS = [
   "Saturday",
   "Sunday",
 ];
-
+//ts data types
 type Data2 = Record<
   string,
   {
@@ -26,10 +26,26 @@ type Data = {
     events: { title: string; date: string; notes: string; bunting: boolean }[];
   };
 };
+//zod data types
+const mainDataSchema = z.record(
+  z.object({
+    division: z.string(),
+    events: z
+      .object({
+        title: z.string(),
+        date: z.string(),
+        notes: z.string(),
+        bunting: z.boolean(),
+      })
+      .array(),
+  })
+);
 
-const printData = (data: Data) => {
+type mainData = z.infer<typeof mainDataSchema>;
+
+const printData = (data: mainData) => {
   for (const key in data) {
-    console.log(data[key]);
+    console.log(key);
   }
 };
 
@@ -37,7 +53,13 @@ const readData = async () => {
   try {
     const input = await readFile(`${__dirname}/../data.json`, "utf-8");
     const jsonData = JSON.parse(input);
-    printData(jsonData);
+    const result = mainDataSchema.safeParse(jsonData);
+
+    if (!result.success) return console.log(result.error.issues);
+
+    const validatedData = result.data;
+
+    printData(validatedData);
   } catch (error) {
     console.log(error);
   }
