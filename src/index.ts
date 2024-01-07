@@ -62,6 +62,21 @@ type DataWithWeekday = {
   };
 };
 
+type DataWithHoliday = {
+  [property: string]: {
+    division: string;
+    events: {
+      title: string;
+      date: DateObject2;
+      notes: string;
+      bunting: boolean;
+    }[];
+    ["amount-by-year"]: Holiday;
+  };
+};
+
+type Holiday = { [property: number]: number };
+
 //zod data types
 const mainDataSchema = z.record(
   z.object({
@@ -141,7 +156,7 @@ const getDayOfWeek = (str: string) => {
 
 //console.log(getDayOfWeek("2023-04-10"));
 
-const addWeekDays = (data: DataWithDates) => {
+const addWeekDays = (data: DataWithDates): DataWithWeekday => {
   const newData: DataWithWeekday = {};
   for (const key in data) {
     newData[key] = {
@@ -153,6 +168,37 @@ const addWeekDays = (data: DataWithDates) => {
           weekday: getDayOfWeek(transformDateBack(event.date)),
         },
       })),
+    };
+  }
+  return newData;
+};
+
+//third task
+
+const holidaysByYear = (events: DataWithWeekday["key"]["events"]): Holiday => {
+  const holidays: Holiday = {};
+
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
+
+    const year = event.date.year;
+
+    if (holidays[year]) {
+      holidays[year]++;
+    } else {
+      holidays[year] = 1;
+    }
+  }
+  return holidays;
+};
+
+const addHolidays = (data: DataWithWeekday): DataWithHoliday => {
+  const newData: DataWithHoliday = {};
+  for (const key in data) {
+    newData[key] = {
+      division: data[key].division,
+      events: data[key].events,
+      ["amount-by-year"]: holidaysByYear(data[key].events),
     };
   }
   return newData;
@@ -170,8 +216,9 @@ const readData = async () => {
 
     const task1 = addDatesToMainData(validatedData);
     const task2 = addWeekDays(task1);
+    const task3 = addHolidays(task2);
 
-    return task2;
+    return task3;
   } catch (error) {
     console.log(error);
   }
@@ -182,7 +229,7 @@ const main = async () => {
 
   if (result) {
     for (const key in result) {
-      console.log(result[key].events);
+      console.log(result[key]);
     }
   }
 };
